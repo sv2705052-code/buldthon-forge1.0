@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Staff Portal - MessFlow</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-purple-700 text-white p-5 shadow-lg">
+    <div class="container flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Mess Staff Portal</h1>
+      <button onclick="logout()" class="btn btn-danger px-6 py-2">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container py-10">
+    <div class="card">
+      <h2 class="text-3xl font-bold text-purple-800 mb-8">Update Student Mess Record</h2>
+
+      <!-- Date picker added here -->
+      <div class="mb-6">
+        <label class="block text-lg font-medium text-gray-700 mb-2">Select Date</label>
+        <input type="date" id="dateInput" class="w-full p-4 border rounded-lg text-lg" required>
+      </div>
+
+      <input id="rollInput" type="text" placeholder="Student Roll Number (e.g. 21103001)" class="w-full p-4 border rounded-lg mb-6 text-lg">
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <label class="flex items-center space-x-3 text-lg bg-gray-50 p-4 rounded-lg">
+          <input type="checkbox" id="bfCheck" class="w-6 h-6">
+          <span>Breakfast Present</span>
+        </label>
+        <label class="flex items-center space-x-3 text-lg bg-gray-50 p-4 rounded-lg">
+          <input type="checkbox" id="lunchCheck" class="w-6 h-6">
+          <span>Lunch Present</span>
+        </label>
+        <label class="flex items-center space-x-3 text-lg bg-gray-50 p-4 rounded-lg">
+          <input type="checkbox" id="dinnerCheck" class="w-6 h-6">
+          <span>Dinner Present</span>
+        </label>
+      </div>
+
+      <div class="flex flex-col md:flex-row gap-4 mb-8">
+        <input id="extraItem" type="text" placeholder="Extra item (Egg, Cold Drink, etc.)" class="flex-1 p-4 border rounded-lg">
+        <input id="extraPrice" type="number" placeholder="Price (₹)" class="w-full md:w-48 p-4 border rounded-lg">
+      </div>
+
+      <button onclick="updateRecord()" class="btn btn-primary w-full py-4 text-lg">Save Changes for Selected Date</button>
+
+      <p id="staffMessage" class="mt-6 text-center text-xl font-medium text-green-700 min-h-[2rem]"></p>
+    </div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (user.role !== 'staff') window.location.href = 'index.html';
+
+    // Default to today if no date selected
+    document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+    function getStudents() { return JSON.parse(localStorage.getItem('mess_students') || '{}'); }
+    function saveStudents(data) { localStorage.setItem('mess_students', JSON.stringify(data)); }
+
+    function updateRecord() {
+      const roll = document.getElementById('rollInput').value.trim().toUpperCase();
+      if (!roll) return alert('Enter student roll number');
+
+      const selectedDate = document.getElementById('dateInput').value;
+      if (!selectedDate) return alert('Please select a date');
+
+      const breakfast = document.getElementById('bfCheck').checked;
+      const lunch = document.getElementById('lunchCheck').checked;
+      const dinner = document.getElementById('dinnerCheck').checked;
+      const item = document.getElementById('extraItem').value.trim();
+      const price = Number(document.getElementById('extraPrice').value) || 0;
+
+      const students = getStudents();
+      let student = students[roll] || { dues: 3200, attendance: {}, extras: [], feedback: [] };
+
+      // Attendance is now stored per date
+      student.attendance[selectedDate] = { breakfast, lunch, dinner };
+
+      // Extras also stored with date
+      if (item && price > 0) {
+        student.extras = student.extras || [];
+        student.extras.push({ 
+          item, 
+          price, 
+          date: selectedDate,
+          time: new Date().toLocaleTimeString() 
+        });
+        student.dues += price;
+      }
+
+      students[roll] = student;
+      saveStudents(students);
+
+      document.getElementById('staffMessage').textContent = 
+        `Updated successfully for ${selectedDate}! Dues now ₹${student.dues}`;
+
+      // Clear inputs after save (optional)
+      document.getElementById('rollInput').value = '';
+      document.getElementById('extraItem').value = '';
+      document.getElementById('extraPrice').value = '';
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

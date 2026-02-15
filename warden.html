@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Warden Portal - MessFlow</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <nav class="bg-pink-700 text-white p-5 shadow-lg">
+    <div class="container flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Warden Portal - Feedback Dashboard</h1>
+      <button onclick="logout()" class="btn btn-danger px-6 py-2">Logout</button>
+    </div>
+  </nav>
+
+  <div class="container py-10">
+    <div class="card">
+      <h2 class="text-3xl font-bold text-pink-800 mb-8">All Food Feedback</h2>
+      <div id="feedbackList" class="space-y-6"></div>
+    </div>
+  </div>
+
+  <script>
+    const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    if (user.role !== 'warden') window.location.href = 'index.html';
+
+    function getStudents() { return JSON.parse(localStorage.getItem('mess_students') || '{}'); }
+
+    function loadFeedbacks() {
+      const students = getStudents();
+      const container = document.getElementById('feedbackList');
+      container.innerHTML = '';
+
+      let hasFeedback = false;
+
+      Object.keys(students).forEach(roll => {
+        const fb = students[roll].feedback || [];
+        fb.forEach(f => {
+          hasFeedback = true;
+          const div = document.createElement('div');
+          div.className = `card ${f.rating <= 3 ? 'feedback-low' : ''}`;
+          div.innerHTML = `
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h4 class="font-bold text-lg">Roll: ${roll}</h4>
+                <p class="text-sm text-gray-500">${f.date}</p>
+              </div>
+              <span class="text-2xl font-bold ${f.rating <= 3 ? 'text-red-600' : 'text-green-600'}">${f.rating} ★</span>
+            </div>
+            <p class="text-gray-800">${f.comment}</p>
+          `;
+          container.appendChild(div);
+        });
+      });
+
+      if (!hasFeedback) {
+        container.innerHTML = '<p class="text-center text-gray-600 text-xl py-10">No feedback submitted yet</p>';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('currentUser');
+      window.location.href = 'index.html';
+    }
+
+    loadFeedbacks();
+  </script>
+</body>
+</html>
